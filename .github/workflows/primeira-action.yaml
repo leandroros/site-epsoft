@@ -10,7 +10,7 @@ on:
     workflow_dispatch:
 
 jobs:
-    site-deploy: 
+    teste-php: 
       runs-on: ubuntu-latest
       steps:
             - uses: actions/checkout@v3
@@ -23,7 +23,7 @@ jobs:
       runs-on: ubuntu-latest
       environment:
               name: site
-      needs: site-deploy
+      needs: teste-php
       steps:
             - name: Repo Checkout
               uses: actions/checkout@v3
