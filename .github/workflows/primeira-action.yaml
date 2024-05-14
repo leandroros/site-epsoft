@@ -10,20 +10,35 @@ on:
     workflow_dispatch:
 
 jobs:
-    teste-php: 
+    php-teste: 
       runs-on: ubuntu-latest
       steps:
-            - uses: actions/checkout@v3
+            - name: Checkout code
+              uses: actions/checkout@v3
             
-            # Runs a single command using the runners shell
-            - name: Run a one-line script
-              run: echo Hello, world!
+            # Ele executa em cada push ou pull request no repositório.
+            #Ele roda em uma máquina virtual Ubuntu.
+            #Ele verifica o código do repositório.
+            #Configura o PHP 8.0.
+            #Instala as dependências usando o Composer.
+            #Executa os testes usando o PHPUnit.
+            
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                php-version: '8.0'
+
+            - name: Install dependencies
+              run: composer install
+
+            - name: Run tests
+              run: vendor/bin/phpunit
     
     deploy-site:
       runs-on: ubuntu-latest
       environment:
               name: site
-      needs: teste-php
+      needs: php-teste
       steps:
             - name: Repo Checkout
               uses: actions/checkout@v3
