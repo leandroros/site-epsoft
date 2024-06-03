@@ -15,16 +15,15 @@ if (isset($_POST['submitBtn'])) {
 
     //Campos do forms
     $nome = $_POST['nome'];
-    $email = $_POST['email'];
-    $telefone = $_POST['telefone'];
-    $empresa = $_POST['empresa'];
-    $cargo = $_POST['cargo'];
-    $segmento = $_POST['segmento'];
-    $tamanhoEmpresa = $_POST['tamanho-empresa'];
+    $email = $POST['email']
+    $telefone = $POST['telefone'];
+    $empresa = $POST['empresa'];
+    $cargo = $POST['cargo'];
+    $segmento = $POST['segmento'];
+    $tamanhoEmpresa = $POST['tamanho-empresa'];
 
 
 
-    if (!empty($nome) && !empty($email) && !empty($telefone) && !empty($empresa) && !empty($cargo) && !empty($segmento) && !empty($tamanhoEmpresa)) {
 
         
         $email_remetente = "amanda.lima@epsoft.com.br"; // deve ser uma conta de email do seu dominio 
@@ -35,10 +34,10 @@ if (isset($_POST['submitBtn'])) {
             . "<br><b>De:</b> " . $nome
             . "<br><b>Email:</b> " . $email
             . "<br><b>Telefone:</b> " . $telefone
-            . "<br><b>Empresa:</br>" . $empresa
-            . "<br><b>Cargo:</br>" . $cargo
-            . "<br><b>Segmento:</br>" . $segmento
-            . "<br><b>Tamanho da Empresa:</br>" . $tamanhoEmpresa
+            ."<br><b>Empresa:</br>" . $empresa
+            ."<br><b>Cargo:</br>" . $cargo
+            ."<br><b>Segmento:</br>" . $segmento
+            ."<br><b>Tamanho da Empresa:</br>" . $tamanhoEmpresa
             //. "<br><b>Assunto:</b> " . $assunto
             //. "<br><b>Mensagem:</b> " . $mensagem
             . "<br><br>"
@@ -57,7 +56,6 @@ if (isset($_POST['submitBtn'])) {
                 <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
                 <strong>Mensagem enviada com sucesso!</strong> 
             </div>';
-
         } else {
 
 
@@ -68,20 +66,16 @@ if (isset($_POST['submitBtn'])) {
                 <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
                 <strong>Erro ao enviar mensagem, tente novamente! </strong> 
             </div>';
-
         }
-
-        }  else {
-     
+        
+    
+        
         //mostra mensagem de erro caso algum dos campos esteja vazio
         $msg = '<div class="alert alert-danger alert-dismissable">
                 <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
                 <strong>Preencha todos os campos!! </strong> 
             </div>';
-        }
-
     
-        //echo $msg;
-    }  
-?>  
+}
+
         
