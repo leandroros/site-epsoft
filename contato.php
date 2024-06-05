@@ -1,68 +1,100 @@
 <?php
 
 
-
-    $msg = '';
-    
-    //campos do formulario
-    $nome = $_POST['nome'];
-    $email = $_POST['email'];
-    $telefone = $_POST['telefone'];
-    $assunto = $_POST["assunto"];
-    $mensagem = $_POST['mensagem'];
-    $empresa = $_POST['empresa'];
-    $cargo = $_POST['cargo'];
-    $segmento = $_POST['segmento'];
-    $tamanhoempresa = $_POST['tamanho-empresa'];
-    
-        $email_remetente = $email; // deve ser uma conta de email do seu dominio 
-        $email_destinatario = "contato@epsoft.com.br"; // email que receberá as mensagens
-        $email_recebidoDe = "$email";
-        $email_assunto = "Envio do Formulário de Contato | Site EPSOFT"; // Este será o assunto da mensagem
-        $email_conteudo = "FORMULÁRIO DE CONTATO\n"
-            . "<br><b>De:</b> " . $nome
-            . "<br><b>Email:</b> " . $email
-            . "<br><b>Telefone:</b> " . $telefone
-            . "<br><b>Assunto:</b> " . $assunto
-            . "<br><b>Mensagem:</b> " . $mensagem
-            . "<br><b>Empresa:</b> " . $empresa
-            . "<br><b>Cargo:</b> " . $cargo
-            . "<br><b>Segmento:</b> " . $segmento
-            . "<br><b>Tamanho Empresa:</b> " . $tamanhoempresa
-            . "<br><br>"
-            . "<hr>"
-            . "<br>Mensagem enviada do formulário de contato da demonstração de formulário de contato com php.";
-
-        //encapsula os dados do cabeçalho do email
-        $email_cabecalho = implode("\n", array("From: $email_remetente", "Reply-To: $email_recebidoDe", "Return-Path: $email_remetente", "MIME-Version: 1.0", "X-Priority: 3", "Content-Type: text/html; charset=UTF-8"));
-        
-        //utiliza função nativa do php mail para o envio
-        //valida se o email foi enviado
-        if (mail($email_destinatario, $email_assunto, nl2br($email_conteudo), $email_cabecalho)) {
-            
-            //mostra mensagem de envio com sucesso
-            $msg = '<div class="alert alert-success alert-dismissable">
-                <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
-                <strong>Mensagem enviada com sucesso!</strong> 
-            </div>';
-
-            //sleep(3);
-            //header("Location: index.html");
-
-        } else {
-
-            //mostra mensagem de erro ao enviar
-            $msg = '<div class="alert alert-danger alert-dismissable">
-                <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
-                <strong>Erro ao enviar mensagem, tente novamente! </strong> 
-            </div>';
-            //sleep(3);
-            //header("Location: index.html");
-        }
-        
-    
-        
-    
+ //campos do formulario
+ $nome = $_POST['nome'];
+ $email = $_POST['email'];
+ $telefone = $_POST['telefone'];
+ $assunto = $_POST["assunto"];
+ $mensagem = $_POST['mensagem'];
+ $empresa = $_POST['empresa'];
+ $cargo = $_POST['cargo'];
+ $segmento = $_POST['segmento'];
+ $tamanhoempresa = $_POST['tamanho-empresa'];
 
 
-        
+
+
+
+
+
+ $arquivo = "
+ <style type='text/css'>
+ body {
+ margin:0px;
+ font-family:Verdane;
+ font-size:12px;
+ color: #666666;
+ }
+ a{
+ color: #666666;
+ text-decoration: none;
+ }
+ a:hover {
+ color: #FF0000;
+ text-decoration: none;
+ }
+ </style>
+   <html>
+       <table width='510' border='1' cellpadding='1' cellspacing='1' bgcolor='#CCCCCC'>
+           <tr>
+             <td>
+ <tr>
+                <td width='500'>Nome:$nome</td>
+               </tr>
+               <tr>
+                 <td width='320'>E-mail:<b>$email</b></td>
+    </tr>
+     <tr>
+                 <td width='320'>Telefone:<b>$telefone</b></td>
+               </tr>
+    <tr>
+                 <td width='320'>Assunto:$assunto</td>
+               </tr>
+               <tr>
+                 <td width='320'>Mensagem:$mensagem</td>
+               </tr>
+               <tr>
+                 <td width='320'>Cargo:$cargo</td>
+               </tr>
+               <tr>
+                 <td width='320'>Segmento:$segmento</td>
+               </tr>
+               <tr>
+                 <td width='320'>Tamanho Empresa:$tamanhoempresa</td>
+               </tr>
+           </td>
+         </tr>
+         
+       </table>
+   </html>
+ ";
+
+
+
+
+
+
+
+
+
+
+// emails para quem será enviado o formulário
+$emailenviar = "contato@epsoft.com.br";
+$destino = $emailenviar;
+$assunto = "Contato pelo Site";
+
+// É necessário indicar que o formato do e-mail é html
+$headers  = 'MIME-Version: 1.0' . "\r\n";
+    $headers .= 'Content-type: text/html; charset=iso-8859-1' . "\r\n";
+    $headers .= 'From: $nome <$email>';
+
+
+$enviaremail = mail($destino, $assunto, $arquivo, $headers);
+if($enviaremail){
+$mgm = "E-MAIL ENVIADO COM SUCESSO! ";
+echo " <meta http-equiv='refresh' content='10;URL=index.html'>";
+} else {
+$mgm = "ERRO AO ENVIAR E-MAIL!";
+echo "";
+}
