@@ -47,7 +47,7 @@
             </div>';
 
             sleep(3);
-            header("Location: index.php");
+            header("Location: index.html");
 
         } else {
 
@@ -57,7 +57,7 @@
                 <strong>Erro ao enviar mensagem, tente novamente! </strong> 
             </div>';
             sleep(3);
-            header("Location: index.php");
+            header("Location: index.html");
         }
         
     
