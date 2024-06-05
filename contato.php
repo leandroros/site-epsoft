@@ -15,7 +15,7 @@
     $segmento = $_POST['segmento'];
     $tamanhoempresa = $_POST['tamanho-empresa'];
     
-        $email_remetente = "contato@epsoft.com.br"; // deve ser uma conta de email do seu dominio 
+        $email_remetente = $email; // deve ser uma conta de email do seu dominio 
         $email_destinatario = "contato@epsoft.com.br"; // email que receberá as mensagens
         $email_recebidoDe = "$email";
         $email_assunto = "Envio do Formulário de Contato | Site EPSOFT"; // Este será o assunto da mensagem
@@ -46,8 +46,8 @@
                 <strong>Mensagem enviada com sucesso!</strong> 
             </div>';
 
-            sleep(3);
-            header("Location: index.html");
+            //sleep(3);
+            //header("Location: index.html");
 
         } else {
 
@@ -56,8 +56,8 @@
                 <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
                 <strong>Erro ao enviar mensagem, tente novamente! </strong> 
             </div>';
-            sleep(3);
-            header("Location: index.html");
+            //sleep(3);
+            //header("Location: index.html");
         }
         
     
