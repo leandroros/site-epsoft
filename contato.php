@@ -1,45 +1,34 @@
 <?php
 
-if (isset($_POST['submitBtn'])) {
+
 
     $msg = '';
     
     //campos do formulario
-    /*
     $nome = $_POST['nome'];
     $email = $_POST['email'];
     $telefone = $_POST['telefone'];
     $assunto = $_POST["assunto"];
     $mensagem = $_POST['mensagem'];
-    */
-
-    //Campos do forms
-    $nome = $_POST['nome'];
-    $email = $POST['email']
-    $telefone = $POST['telefone'];
-    $empresa = $POST['empresa'];
-    $cargo = $POST['cargo'];
-    $segmento = $POST['segmento'];
-    $tamanhoEmpresa = $POST['tamanho-empresa'];
-
-
-
-
-        
-        $email_remetente = "amanda.lima@epsoft.com.br"; // deve ser uma conta de email do seu dominio 
-        $email_destinatario = $email; // email que receberá as mensagens
+    $empresa = $_POST['empresa'];
+    $cargo = $_POST['cargo'];
+    $segmento = $_POST['segmento'];
+    $tamanhoempresa = $_POST['tamanho-empresa'];
+    
+        $email_remetente = "contato@epsoft.com.br"; // deve ser uma conta de email do seu dominio 
+        $email_destinatario = "contato@epsoft.com.br"; // email que receberá as mensagens
         $email_recebidoDe = "$email";
         $email_assunto = "Envio do Formulário de Contato | Site EPSOFT"; // Este será o assunto da mensagem
         $email_conteudo = "FORMULÁRIO DE CONTATO\n"
             . "<br><b>De:</b> " . $nome
             . "<br><b>Email:</b> " . $email
             . "<br><b>Telefone:</b> " . $telefone
-            ."<br><b>Empresa:</br>" . $empresa
-            ."<br><b>Cargo:</br>" . $cargo
-            ."<br><b>Segmento:</br>" . $segmento
-            ."<br><b>Tamanho da Empresa:</br>" . $tamanhoEmpresa
-            //. "<br><b>Assunto:</b> " . $assunto
-            //. "<br><b>Mensagem:</b> " . $mensagem
+            . "<br><b>Assunto:</b> " . $assunto
+            . "<br><b>Mensagem:</b> " . $mensagem
+            . "<br><b>Empresa:</b> " . $empresa
+            . "<br><b>Cargo:</b> " . $cargo
+            . "<br><b>Segmento:</b> " . $segmento
+            . "<br><b>Tamanho Empresa:</b> " . $tamanhoempresa
             . "<br><br>"
             . "<hr>"
             . "<br>Mensagem enviada do formulário de contato da demonstração de formulário de contato com php.";
@@ -56,26 +45,24 @@ if (isset($_POST['submitBtn'])) {
                 <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
                 <strong>Mensagem enviada com sucesso!</strong> 
             </div>';
+
+            sleep(3);
+            header("Location: index.php");
+
         } else {
-
-
-            //Vamos refazer em JS
 
             //mostra mensagem de erro ao enviar
             $msg = '<div class="alert alert-danger alert-dismissable">
                 <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
                 <strong>Erro ao enviar mensagem, tente novamente! </strong> 
             </div>';
+            sleep(3);
+            header("Location: index.php");
         }
         
     
         
-        //mostra mensagem de erro caso algum dos campos esteja vazio
-        $msg = '<div class="alert alert-danger alert-dismissable">
-                <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
-                <strong>Preencha todos os campos!! </strong> 
-            </div>';
     
-}
+
 
         
