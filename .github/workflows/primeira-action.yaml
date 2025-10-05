@@ -1,4 +1,4 @@
-name: "CI (Atualização Site-epsoft): GitAction"
+name: "CI Completo Site-epsoft"
 
 on:
   push:
@@ -7,164 +7,73 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 
-permissions:
-  contents: read
-  pull-requests: read
-
 jobs:
   php-teste:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Setup PHP
-        run: echo "Tudo certo"
+      - name: Checkout do repositório
+        uses: actions/checkout@v3
 
-  security-scan:
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+
+      - name: Validar PHP
+        run: |
+          php -v
+          php -l **/*.php
+
+  gitleaks-scan:
     runs-on: ubuntu-latest
     needs: php-teste
     steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v4
+      - name: Checkout do repositório
+        uses: actions/checkout@v3
+
+      - name: Gitleaks Scan
+        uses: zricethezav/gitleaks-action@v8
         with:
-          fetch-depth: 0
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          format: sarif
+          output: gitleaks-results.sarif
 
-      # === Gitleaks ===
-      - name: Scan por segredos (Gitleaks)
-        uses: zricethezav/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@v2
         with:
-          args: detect --source . --verbose --redact --report-format=json --report-path=gitleaks-report.json
+          sarif_file: gitleaks-results.sarif
 
-      - name: Verificar resultado do Gitleaks
-        id: gitleaks-check
-        run: |
-          if grep -q '"Leaks":\s*\[{' gitleaks-report.json; then
-            echo "found=true" >> $GITHUB_OUTPUT
-            echo "🚨 Segredos encontrados no código!"
-          else
-            echo "found=false" >> $GITHUB_OUTPUT
-            echo "✅ Nenhum segredo encontrado."
-          fi
+  codeql-scan:
+    runs-on: ubuntu-latest
+    needs: php-teste
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v3
 
-      # === Trivy ===
-      - name: Scan de dependências (Trivy)
-        id: trivy
-        uses: aquasecurity/trivy-action@master
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
         with:
-          scan-type: 'fs'
-          ignore-unfixed: true
-          format: 'json'
-          output: 'trivy-report.json'
-          vuln-type: 'library'
-          severity: 'HIGH,CRITICAL'
-          exit-code: '0'  # não falha ainda, só reporta
+          languages: javascript, php
 
-      # === PHPStan ===
-      - name: Instalar dependências PHPStan
-        run: |
-          sudo apt-get update && sudo apt-get install -y php php-cli php-xml composer
-          composer require --dev phpstan/phpstan
-      - name: Análise estática PHPStan
-        run: vendor/bin/phpstan analyse --memory-limit=512M --no-progress || true
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
 
-      # === npm audit ===
-      - name: Instalar dependências JS e auditar
-        run: |
-          if [ -f package.json ]; then
-            npm install
-            npm audit --json > npm-audit-report.json || true
-          else
-            echo "Nenhum package.json encontrado, pulando auditoria JS."
-          fi
-
-      # === Gerar resumo Markdown ===
-      - name: Gerar resumo dos resultados
-        id: summary
-        run: |
-          echo "# 🔍 Relatório de Segurança" >> summary.md
-          echo "" >> summary.md
-
-          echo "## 🧩 Gitleaks" >> summary.md
-          if [ "${{ steps.gitleaks-check.outputs.found }}" = "true" ]; then
-            echo "- 🚨 **Segredos encontrados!** Veja o artefato \`gitleaks-report.json\`." >> summary.md
-          else
-            echo "- ✅ Nenhum segredo encontrado." >> summary.md
-          fi
-          echo "" >> summary.md
-
-          echo "## 🧱 Trivy" >> summary.md
-          if [ -s trivy-report.json ]; then
-            HIGH=$(jq '.Results[].Vulnerabilities[]? | select(.Severity=="HIGH") | .Severity' trivy-report.json | wc -l || echo 0)
-            CRITICAL=$(jq '.Results[].Vulnerabilities[]? | select(.Severity=="CRITICAL") | .Severity' trivy-report.json | wc -l || echo 0)
-            echo "- **Vulnerabilidades HIGH:** $HIGH" >> summary.md
-            echo "- **Vulnerabilidades CRITICAL:** $CRITICAL" >> summary.md
-            if [ "$HIGH" -gt 0 ] || [ "$CRITICAL" -gt 0 ]; then
-              echo "- ⚠️ Vulnerabilidades detectadas — veja o artefato \`trivy-report.json\`." >> summary.md
-            else
-              echo "- ✅ Nenhuma vulnerabilidade crítica detectada." >> summary.md
-            fi
-          else
-            echo "- ❌ Relatório Trivy não encontrado." >> summary.md
-          fi
-          echo "" >> summary.md
-
-          echo "## ⚙️ npm audit" >> summary.md
-          if [ -s npm-audit-report.json ]; then
-            COUNT=$(jq '.vulnerabilities | length' npm-audit-report.json || echo 0)
-            echo "- **Total de vulnerabilidades JS:** $COUNT" >> summary.md
-          else
-            echo "- 💤 Auditoria JS não executada." >> summary.md
-          fi
-          echo "" >> summary.md
-
-          echo "## 📦 Artefatos disponíveis" >> summary.md
-          echo "- [security-reports](./security-reports)" >> summary.md
-
-          cat summary.md >> $GITHUB_STEP_SUMMARY
-
-      # === Upload dos relatórios ===
-      - name: Upload de Relatórios
-        uses: actions/upload-artifact@v4
-        with:
-          name: security-reports
-          path: |
-            gitleaks-report.json
-            trivy-report.json
-            npm-audit-report.json
-            summary.md
-          if-no-files-found: ignore
-
-  # 🚀 Deploy final
   deploy-site:
     runs-on: ubuntu-latest
+    needs: [php-teste, gitleaks-scan, codeql-scan]
     environment:
       name: site
-    needs: [php-teste, security-scan]
     steps:
       - name: Repo Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Site Deployment
         uses: easingthemes/ssh-deploy@main
         with:
-          SSH_PRIVATE_KEY: ${{secrets.KEY_SECRETORIGINAL}}
+          SSH_PRIVATE_KEY: ${{ secrets.KEY_SECRETORIGINAL }}
           ARGS: "-avz --no-owner --no-group --no-times --no-perms --delete"
           SOURCE: "./"
-          REMOTE_HOST: ${{vars.REMOTE_HOST}}
-          REMOTE_USER: ${{vars.REMOTE_USER}}
-          REMOTE_PORT: ${{vars.REMOTE_PORT}}
-          TARGET: ${{vars.TARGET}}
-
-      # (Opcional) Scan remoto após deploy
-      - name: Scan remoto (Nikto)
-        run: |
-          sudo apt-get update && sudo apt-get install -y nikto
-          nikto -h "https://${{vars.SITE_URL}}" -output nikto-report.txt || true
-
-      - name: Upload Report Nikto
-        uses: actions/upload-artifact@v4
-        with:
-          name: nikto-report
-          path: nikto-report.txt
-          if-no-files-found: ignore
+          REMOTE_HOST: ${{ vars.REMOTE_HOST }}
+          REMOTE_USER: ${{ vars.REMOTE_USER }}
+          REMOTE_PORT: ${{ vars.REMOTE_PORT }}
+          TARGET: ${{ vars.TARGET }}
