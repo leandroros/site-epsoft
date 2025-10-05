@@ -22,7 +22,8 @@ jobs:
       - name: Validar PHP
         run: |
           php -v
-          php -l **/*.php
+          # Valida todos os arquivos PHP
+          find . -type f -name "*.php" -exec php -l {} \;
 
   gitleaks-scan:
     runs-on: ubuntu-latest
