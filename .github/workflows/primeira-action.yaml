@@ -8,6 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
+  # 🔧 Teste básico
   php-teste:
     runs-on: ubuntu-latest
     steps:
@@ -15,7 +16,7 @@ jobs:
       - name: Setup PHP
         run: echo "Tudo certo"
 
-  # 🚨 Novo Job de Segurança
+  # 🔒 Scan de vulnerabilidades e análise de código
   security-scan:
     runs-on: ubuntu-latest
     needs: php-teste
@@ -23,13 +24,13 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v3
 
-      # Gitleaks - procurar senhas, tokens, chaves etc
+      # === Gitleaks: procura senhas, chaves e tokens ===
       - name: Scan por segredos (Gitleaks)
         uses: zricethezav/gitleaks-action@v2
         with:
           args: --verbose --redact --report-format=json --report-path=gitleaks-report.json
 
-      # Trivy - varre dependências PHP/JS e vulnerabilidades em libs
+      # === Trivy: verifica vulnerabilidades em dependências PHP/JS ===
       - name: Scan de dependências (Trivy)
         uses: aquasecurity/trivy-action@master
         with:
@@ -39,15 +40,36 @@ jobs:
           exit-code: '0'
           output: 'trivy-report.txt'
 
-      # Opcional: subir relatório como artefato
+      # === PHPStan: análise estática do código PHP ===
+      - name: Instalar dependências PHPStan
+        run: |
+          sudo apt-get update && sudo apt-get install -y php php-cli php-xml composer
+          composer require --dev phpstan/phpstan
+      - name: Análise estática PHPStan
+        run: vendor/bin/phpstan analyse --memory-limit=512M --no-progress || true
+
+      # === npm audit: verifica vulnerabilidades JS ===
+      - name: Instalar dependências JS e auditar
+        run: |
+          if [ -f package.json ]; then
+            npm install
+            npm audit --json > npm-audit-report.json || true
+          else
+            echo "Nenhum package.json encontrado, pulando auditoria JS."
+          fi
+
+      # === Upload de relatórios ===
       - name: Upload de Relatórios
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: security-reports
           path: |
             gitleaks-report.json
             trivy-report.txt
+            npm-audit-report.json
+          if-no-files-found: ignore
 
+  # 🚀 Deploy final
   deploy-site:
     runs-on: ubuntu-latest
     environment:
@@ -67,3 +89,16 @@ jobs:
           REMOTE_USER: ${{vars.REMOTE_USER}}
           REMOTE_PORT: ${{vars.REMOTE_PORT}}
           TARGET: ${{vars.TARGET}}
+
+      # (Opcional) Scan remoto após deploy
+      - name: Scan remoto (Nikto)
+        run: |
+          sudo apt-get update && sudo apt-get install -y nikto
+          nikto -h "https://${{vars.SITE_URL}}" -output nikto-report.txt || true
+
+      - name: Upload Report Nikto
+        uses: actions/upload-artifact@v4
+        with:
+          name: nikto-report
+          path: nikto-report.txt
+          if-no-files-found: ignore
