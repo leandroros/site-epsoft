@@ -7,12 +7,16 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
   # 🔧 Teste básico
   php-teste:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup PHP
         run: echo "Tudo certo"
 
@@ -22,13 +26,24 @@ jobs:
     needs: php-teste
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      # === Gitleaks: procura senhas, chaves e tokens ===
+      # === Gitleaks: procura segredos, chaves e tokens ===
       - name: Scan por segredos (Gitleaks)
         uses: zricethezav/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           args: --verbose --redact --report-format=json --report-path=gitleaks-report.json
+      # Se o relatório contiver vazamentos, falha o job
+      - name: Verificar resultado do Gitleaks
+        run: |
+          if grep -q '"Leaks":\s*\[{' gitleaks-report.json; then
+            echo "🚨 Segredos encontrados no código!"
+            exit 1
+          else
+            echo "✅ Nenhum segredo encontrado."
+          fi
 
       # === Trivy: verifica vulnerabilidades em dependências PHP/JS ===
       - name: Scan de dependências (Trivy)
@@ -36,9 +51,11 @@ jobs:
         with:
           scan-type: 'fs'
           ignore-unfixed: true
-          format: 'table'
-          exit-code: '0'
-          output: 'trivy-report.txt'
+          format: 'json'
+          output: 'trivy-report.json'
+          vuln-type: 'library'
+          severity: 'HIGH,CRITICAL'
+          exit-code: '1'
 
       # === PHPStan: análise estática do código PHP ===
       - name: Instalar dependências PHPStan
@@ -65,7 +82,7 @@ jobs:
           name: security-reports
           path: |
             gitleaks-report.json
-            trivy-report.txt
+            trivy-report.json
             npm-audit-report.json
           if-no-files-found: ignore
 
@@ -77,7 +94,7 @@ jobs:
     needs: [php-teste, security-scan]
     steps:
       - name: Repo Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Site Deployment
         uses: easingthemes/ssh-deploy@main
@@ -90,7 +107,7 @@ jobs:
           REMOTE_PORT: ${{vars.REMOTE_PORT}}
           TARGET: ${{vars.TARGET}}
 
-      # (Opcional) Scan remoto após deploy
+      # (Opcional) Scan remoto do site após deploy
       - name: Scan remoto (Nikto)
         run: |
           sudo apt-get update && sudo apt-get install -y nikto
