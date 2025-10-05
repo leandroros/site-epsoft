@@ -15,11 +15,44 @@ jobs:
       - name: Setup PHP
         run: echo "Tudo certo"
 
+  # 🚨 Novo Job de Segurança
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: php-teste
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      # Gitleaks - procurar senhas, tokens, chaves etc
+      - name: Scan por segredos (Gitleaks)
+        uses: zricethezav/gitleaks-action@v2
+        with:
+          args: --verbose --redact --report-format=json --report-path=gitleaks-report.json
+
+      # Trivy - varre dependências PHP/JS e vulnerabilidades em libs
+      - name: Scan de dependências (Trivy)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          ignore-unfixed: true
+          format: 'table'
+          exit-code: '0'
+          output: 'trivy-report.txt'
+
+      # Opcional: subir relatório como artefato
+      - name: Upload de Relatórios
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-reports
+          path: |
+            gitleaks-report.json
+            trivy-report.txt
+
   deploy-site:
     runs-on: ubuntu-latest
     environment:
       name: site
-    needs: php-teste
+    needs: [php-teste, security-scan]
     steps:
       - name: Repo Checkout
         uses: actions/checkout@v3
