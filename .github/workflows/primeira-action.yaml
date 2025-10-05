@@ -1,40 +1,36 @@
 name: "CI (Atualização Site-epsoft): GitAction"
-on:
-    # Triggers the workflow on push or pull request events but only for the "main" branch
-    # Ativa esse fluxo de trabalho para cada push que acontecer apontando para a branch main
-    push:
-      branches: [ "main" ]
-    pull_request:
-      branches: [ "main" ]
 
-    workflow_dispatch:
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
-    php-teste: 
-      runs-on: ubuntu-latest
-      steps:
-            - uses: actions/checkout@v3
-                      
-            - name: Setup up PHP
-              run: echo tudo certo
-                        
-              
-    deploy-site:
-      runs-on: ubuntu-latest
-      environment:
-              name: site
-      needs: php-teste
-      steps:
-            - name: Repo Checkout
-              uses: actions/checkout@v3
-            - name: Site Deployment
-              uses: easingthemes/ssh-deploy@main
-              with:
-                SSH_PRIVATE_KEY: ${{secrets.KEY_SECRETORIGINAL}}
-                #ARGS: "-rlgoDzvc --delete"
-                SOURCE: "./"
-                REMOTE_HOST: ${{vars.REMOTE_HOST}}
-                REMOTE_USER: ${{vars.REMOTE_USER}}
-                REMOTE_PORT: ${{vars.REMOTE_PORT}}
-                TARGET: ${{vars.TARGET}}
+  php-teste:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup PHP
+        run: echo "Tudo certo"
 
+  deploy-site:
+    runs-on: ubuntu-latest
+    environment:
+      name: site
+    needs: php-teste
+    steps:
+      - name: Repo Checkout
+        uses: actions/checkout@v3
+
+      - name: Site Deployment
+        uses: easingthemes/ssh-deploy@main
+        with:
+          SSH_PRIVATE_KEY: ${{secrets.KEY_SECRETORIGINAL}}
+          ARGS: "-avz --no-owner --no-group --delete"
+          SOURCE: "./"
+          REMOTE_HOST: ${{vars.REMOTE_HOST}}
+          REMOTE_USER: ${{vars.REMOTE_USER}}
+          REMOTE_PORT: ${{vars.REMOTE_PORT}} 
+          TARGET: ${{vars.TARGET}}
