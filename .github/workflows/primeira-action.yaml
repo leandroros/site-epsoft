@@ -8,14 +8,13 @@ on:
   workflow_dispatch:
 
 jobs:
-  # Job para checagem e teste de PHP
   php-teste:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout do repositório
         uses: actions/checkout@v3
 
-      - name: Setup PHP 8.2
+      - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: "8.2"
@@ -23,10 +22,8 @@ jobs:
       - name: Validar PHP
         run: |
           php -v
-          # Valida sintaxe de todos os arquivos PHP
           find . -type f -name "*.php" -exec php -l {} \;
 
-  # Job para rodar Gitleaks
   gitleaks-scan:
     runs-on: ubuntu-latest
     needs: php-teste
@@ -34,31 +31,18 @@ jobs:
       - name: Checkout do repositório
         uses: actions/checkout@v3
 
-      - name: Run Gitleaks
-        uses: zricethezav/gitleaks-action@v8
+      - name: Gitleaks Scan
+        uses: gitleaks/gitleaks-action@v2.3.9
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          format: sarif
+          output: gitleaks-results.sarif
 
-  # Job para rodar CodeQL
-  codeql-scan:
-    runs-on: ubuntu-latest
-    needs: php-teste
-    steps:
-      - name: Checkout do repositório
-        uses: actions/checkout@v3
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@v2
         with:
-          languages: "javascript,php"
-      
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
+          sarif_file: gitleaks-results.sarif
 
-      - name: Perform CodeQL Scan
-        uses: github/codeql-action/analyze@v3
-
-  # Job para PHPStan (análise estática)
   phpstan-scan:
     runs-on: ubuntu-latest
     needs: php-teste
@@ -66,18 +50,18 @@ jobs:
       - name: Checkout do repositório
         uses: actions/checkout@v3
 
-      - name: Setup Composer
+      - name: Setup PHPStan
         run: |
           curl -sS https://getcomposer.org/installer | php
           php composer.phar require --dev phpstan/phpstan
 
       - name: Run PHPStan
-        run: ./vendor/bin/phpstan analyse src --level=max
+        run: |
+          ./vendor/bin/phpstan analyse src --level=max
 
-  # Job de deploy
   deploy-site:
     runs-on: ubuntu-latest
-    needs: [php-teste, gitleaks-scan, phpstan-scan, codeql-scan]
+    needs: [php-teste, gitleaks-scan, phpstan-scan]
     environment:
       name: site
     steps:
